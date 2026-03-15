@@ -1,47 +1,30 @@
 import streamlit as st
 from supabase import create_client
 
-# O sistema busca as credenciais no "Cofre" (Secrets) que você configurou no Streamlit
-URL = st.secrets["SUPABASE_URL"]
-KEY = st.secrets["SUPABASE_SERVICE_KEY"]
+# Configuração que busca no cofre do Streamlit
+try:
+    URL = st.secrets["SUPABASE_URL"]
+    KEY = st.secrets["SUPABASE_SERVICE_KEY"]
+except:
+    st.error("❌ O cofre está vazio! Configure os Secrets no Streamlit.")
+    st.stop()
 
-st.set_page_config(page_title="Sistema Devasta AI", layout="wide", page_icon="🚀")
-
-@st.cache_resource
-def iniciar_conexao():
-    # Conexão direta via Service Role (Bypass de rede)
-    return create_client(URL, KEY)
-
+st.set_page_config(page_title="Sistema Devasta AI", layout="wide")
 st.title("🚀 Sistema Devasta - QG de Inteligência")
 
 try:
-    supabase = iniciar_conexao()
-    # Puxa os dados do banco para validar o seu acesso
-    res = supabase.table("configuracoes_payout").select("*").execute()
+    supabase = create_client(URL, KEY)
+    # Puxa o seu nome direto do banco de dados
+    res = supabase.table("configuracoes_payout").select("titular").execute()
     
     if res.data:
         st.balloons()
-        st.success(f"✅ ACESSO TOTAL LIBERADO: BEM-VINDO, {res.data[0]['titular'].upper()}!")
-        
-        # Painel de Controle
-        col1, col2, col3 = st.columns(3)
-        col1.metric("Status", "ONLINE", delta="100%")
-        col2.metric("Banco de Destino", res.data[0]['banco'])
-        col3.metric("Agência", res.data[0]['agencia'])
-        
+        st.success(f"✅ COMANDO LIBERADO: BEM-VINDO, {res.data[0]['titular'].upper()}!")
         st.divider()
-        st.subheader("🕵️‍♂️ Missão Sniper")
-        if st.button("🔥 DISPARAR AGENTE AGORA"):
-            # Registra o disparo no banco de dados
-            supabase.table("logs_agentes").insert({"agente": "Sniper", "acao_executada": "Ataque Total Iniciado"}).execute()
+        if st.button("🔥 ATIVAR AGENTE SNIPER AGORA"):
             st.snow()
-            st.info("O Sniper está rastreando os produtos mais vendidos por região...")
+            st.info("Varredura global iniciada! IA caçando produtos...")
     else:
-        st.warning("Conectado, mas aguardando sincronização de dados do titular.")
-
+        st.warning("Conectado, mas não encontrei seu cadastro na tabela.")
 except Exception as e:
-    st.error("🛰️ Sintonizando sinal com o banco de dados...")
-    st.info("André, se esta mensagem persistir, clique no botão de 'Reboot' no painel do Streamlit.")
-    if st.button("🔄 RECONECTAR AGORA"):
-        st.cache_resource.clear()
-        st.rerun()
+    st.error("🛰️ Sintonizando sinal... Dê um 'Reboot app' no Streamlit.")
